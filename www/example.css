@@ -1,0 +1,12 @@
+/* you can load up any custom css you may want to too! */
+
+p.clickable {
+    color: #ff6600;
+    text-decoration: underline;
+}
+
+p.clickable:hover {
+    color: #0066ff;
+    cursor: pointer;
+    text-decoration: none;
+}
