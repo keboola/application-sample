@@ -2,31 +2,18 @@
 
 ## To run locally
 
-#### In R, install the shiny and devtools packages 
-```
-install.packages(c("shiny","devtools"))
-```
-
-### Now install the shared library from github
-```
-devtools::install_github("keboola/shiny-lib")
-```
-
-#### Ok, switch to the directory where the cloned repo is
+#### switch to the directory where the cloned repo is (if not already there)
 ```
 setwd("/location/of/application-sample")
 ```
 
-#### Load the shiny library into your session, and run the app
+#### run the getting started script (it will install stuff and prompt you for token and bucket)
 ```
-library(shiny)
-runApp()
+source("gettingStarted.R")
 ```
 
-#### Your default browser will load a tab with a random port that shows the application.
-For example: http://127.0.0.1:3057/
+#### Run the app
+```
+runKeboolaApp()
+```
 
-#### Append bucket and token parameters
-http://127.0.0.1:3057/?bucket=in.c-main&token=[my-kbc-token]
-
-#### You should be good to go.
