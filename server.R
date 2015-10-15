@@ -10,14 +10,14 @@ library(keboola.shiny.lib)
 
 shinyServer(function(input, output, session) {
     # Create instance of keboola/shiny-lib
-    klib <- KeboolaShiny$new()
+    klib <- KeboolaShiny$new(requireRunId = FALSE)
     
     keboola <- reactive({
         input$login
         print("load keboola")
         # verify whether we are logged in or not
         loginInfo <- klib$getLogin(session)
-        loginInfo$ready <- klib$ready(session)
+        print(paste("ready?", loginInfo$ready))
         # grab keboola output elements
         kbOut <- klib$output(session, 
                              list(appTitle = "Application Title",
