@@ -4,7 +4,7 @@
 
 installedPackages <- rownames(installed.packages())
 
-cranPackages <- c("devtools", "shiny", "DT")
+cranPackages <- c("devtools", "shiny", "DT", "ggplot2", "plotly")
 
 new.packages <- cranPackages[!(cranPackages %in% installedPackages)]
 if(length(new.packages)) install.packages(new.packages)
@@ -18,7 +18,7 @@ if (("keboola.sapi.r.client" %in% installedPackages) == FALSE) {
     devtools::install_github("keboola/sapi-r-client")    
 }
 if (("keboola.shiny.lib" %in% installedPackages) == FALSE) {
-    devtools::install_github("keboola/shiny-lib")    
+    devtools::install_github("keboola/shiny-lib", ref="refactor")    
 }
 
 library(keboola.sapi.r.client)

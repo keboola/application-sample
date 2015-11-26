@@ -3,34 +3,33 @@
 
 # Load libraries
 library(shiny)
+library(networkD3)
+library(plotly)
 
-# this is the main library. Its usage is demonstrated below.  
-# source can be found at https://github.com/keboola/shiny-lib
+# connection to keboola, use what you like.  
+# https://github.com/keboola/shiny-lib
 library(keboola.shiny.lib)
 
+
 shinyServer(function(input, output, session) {
+    
     # Create instance of keboola/shiny-lib
     klib <- KeboolaShiny$new(requireRunId = FALSE)
     
+    # keboola will hold 
     keboola <- reactive({
-        input$login
-        print("load keboola")
-        # verify whether we are logged in or not
-        loginInfo <- klib$getLogin(session)
-        print(paste("ready?", loginInfo$ready))
-        # grab keboola output elements
-        kbOut <- klib$output(session, 
+        
+        # start it up
+        ret <- klib$startup(
                              list(appTitle = "Application Title",
+                                  tables = NULL,
                                   dataToSave = NULL,
                                   configCallback = NULL,
-                                  description = TRUE,
+                                  description = FALSE,
                                   customElements = NULL))
-        # copy the elements into our output list
-        for (mem in names(kbOut)) {
-            output[[mem]] <- kbOut[[mem]]
-        }
+        
         #return login info list so the rest of the app can use it if desired.
-        return(loginInfo)
+        return(ret$loginInfo)
     })
     
     # This observe method will run if anything inside the keboola() reactive changes.  
@@ -53,6 +52,7 @@ shinyServer(function(input, output, session) {
             updateSelectInput(session,"table",choices=c(tableNames))
             
         } else {
+            print("server.R not ready")
             NULL
         }
     })
@@ -61,18 +61,22 @@ shinyServer(function(input, output, session) {
     # By default the loadTables function will display a progress bar while downloading data
     # Once we have the data, we can update our rangeCols selector with the column names
     sourceData <- reactive({
-        if (keboola()$ready && input$table != "") {
+        if (input$table != "") {
             
             # this library method returns
-            loadedTables <- klib$loadTables(session,list("sd" = input$table))
-            table <- loadedTables$sd
+            klib$loadTable("sd",input$table)
             
+            table <- klib$sourceData()()$sd
+            
+            print(head(table))
             # update the choices
             updateSelectInput(session,"rangeCols", choices=names(table))
             updateSelectInput(session,"histCol", choices=names(table))
             
             # return the table
             table
+        } else {
+            NULL
         }
     })
     
@@ -148,9 +152,54 @@ shinyServer(function(input, output, session) {
         bins <- seq(min(x, na.rm=TRUE), max(x, na.rm=TRUE), length.out = input$bins + 1)
         
         # draw the histogram with the specified number of bins
-        hist(x, prob=TRUE, breaks = bins, col = 'lightblue', border = 'white')
+        hist(x, prob=TRUE, breaks = bins, col = 'lightblue', border = 'white', main=paste("Histogram of", input$histCol))
         
         # lets add a density line as it can help visualize peaks and valleys
         lines(density(x, na.rm=TRUE), col="darkblue", lwd=2) # add a density estimate with defaults
+    })
+    
+    output$sankey <- renderSankeyNetwork({
+        URL <- paste0("https://cdn.rawgit.com/christophergandrud/networkD3/",
+                      "master/JSONdata/energy.json")
+        Energy <- jsonlite::fromJSON(URL)
+        
+        # Plot
+        sankeyNetwork(Links = Energy$links, Nodes = Energy$nodes, Source = "source",
+                      Target = "target", Value = "value", NodeID = "name",
+                      fontSize = 12, nodeWidth = 30)
+    })
+    
+    output$varmean <- renderText({
+        mean(as.numeric(filteredData()[,input$histCol]))
+    })
+    output$varsd <- renderText({
+        sd(as.numeric(filteredData()[,input$histCol]))
+    })
+    
+    # This is the plot.ly histogram
+    output$trendPlot <- renderPlotly({
+        data(movies, package="ggplot2")
+        minx <- min(movies$rating)
+        maxx <- max(movies$rating)
+        
+        # size of the bins depend on the input 'bins'
+        size <- (maxx - minx) / input$moviebins
+        
+        # a simple histogram of movie ratings
+        p <- plot_ly(movies, x = rating, autobinx = F, type = "histogram",
+                     xbins = list(start = minx, end = maxx, size = size))
+        # style the xaxis
+        layout(p, xaxis = list(title = "Ratings", range = c(minx, maxx), autorange = F,
+                               autotick = F, tick0 = minx, dtick = size))
+    })
+    
+    # This is a plotly box plot
+    output$boxPlot <- renderPlotly({
+        plot_ly(midwest, x = percollege, color = state, type = "box")
+    })
+    
+    # Fancy 3D surface plot
+    output$volcano <- renderPlotly({
+        plot_ly(z = volcano, type = "surface")
     })
 })

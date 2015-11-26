@@ -5,6 +5,8 @@
 # We need to load the shared library on the UI side 
 # because it contains keboolaPage and keboolaModal methods
 library("keboola.shiny.lib")
+library("networkD3")
+library("plotly")
 
 shinyUI(
     # keboolaPage - displays a keboola application and takes care of authentication/login 
@@ -80,6 +82,14 @@ shinyUI(
                                                         value = 30
                                                 )
                                             )
+                                        ),
+                                        fluidRow(
+                                            column(6,div(
+                                                "Mean:", textOutput("varmean")    
+                                            )),
+                                            column(6,div(
+                                                "Standard Deviation:", textOutput("varsd")    
+                                            ))
                                         )
                                     ),
                                     tabPanel("Data Table",
@@ -88,6 +98,14 @@ shinyUI(
                                 ) 
                             )
                         )    
+                    ),
+                   tabPanel("D3 Examples",
+                        sankeyNetworkOutput("sankey")),
+                   tabPanel("Plot.ly Examples",
+                        plotlyOutput("trendPlot"),
+                        sliderInput("moviebins", "Number of bins:", min = 1, max = 50, value = 10),
+                        plotlyOutput("boxPlot"),
+                        plotlyOutput("volcano")
                     )
                 ),
                
