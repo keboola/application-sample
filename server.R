@@ -5,11 +5,30 @@
 library(shiny)
 library(networkD3)
 library(plotly)
+library(data.table)
 
 # connection to keboola, use what you like.  
 # https://github.com/keboola/shiny-lib
 library(keboola.shiny.lib)
 
+vykony <- fread("~/Downloads/fnhk_vykony.csv")
+prepVykony <- function(data) {
+    data$Identifikace_pripadu <- as.factor(data$Identifikace$pripadu)
+    data$Datum_provedeni_vykonu <- as.Date(data$Datum_provedeni_vykonu)
+    data$Kod_polozky <- as.factor(data$Kod_polozky)
+    data$Typ_polozky <- as.factor(data$Typ_polozky)
+    data$Body <- as.numeric(data$Body)
+    data$Pocet <- as.numeric(data$Pocet)
+}
+zup <- fread("~/Downloads/fnhk_zup.csv")
+prepZup <- function(data) {
+    data$Identifikace_pripadu <- as.factor(data$Identifikace$pripadu)
+    data$Datum_provedeni_vykonu <- as.Date(data$Datum_provedeni_vykonu)
+    data$Kod_polozky <- as.factor(data$Kod_polozky)
+    data$Typ_polozky <- as.factor(data$Typ_polozky)
+    data$Cena <- as.numeric(data$Cena)
+    data$Pocet <- as.numeric(data$Pocet)
+}
 
 shinyServer(function(input, output, session) {
     
