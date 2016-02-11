@@ -92,6 +92,11 @@ shinyUI(
                                             ))
                                         )
                                     ),
+                                    tabPanel("Plot.ly plot", 
+                                        selectInput("xcol", "X Column", choices=c()),
+                                        selectInput("ycol", "Y Column", choices=c()),
+                                        plotlyOutput("pplot")         
+                                    ),
                                     tabPanel("Data Table",
                                              dataTableOutput("sampleTable")         
                                     )
@@ -99,7 +104,7 @@ shinyUI(
                             )
                         )    
                     ),
-                   tabPanel("D3 Examples",
+                   tabPanel("D3 Example",
                         sankeyNetworkOutput("sankey")),
                    tabPanel("Plot.ly Examples",
                         plotlyOutput("trendPlot"),

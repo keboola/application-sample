@@ -11,29 +11,10 @@ library(data.table)
 # https://github.com/keboola/shiny-lib
 library(keboola.shiny.lib)
 
-vykony <- fread("~/Downloads/fnhk_vykony.csv")
-prepVykony <- function(data) {
-    data$Identifikace_pripadu <- as.factor(data$Identifikace$pripadu)
-    data$Datum_provedeni_vykonu <- as.Date(data$Datum_provedeni_vykonu)
-    data$Kod_polozky <- as.factor(data$Kod_polozky)
-    data$Typ_polozky <- as.factor(data$Typ_polozky)
-    data$Body <- as.numeric(data$Body)
-    data$Pocet <- as.numeric(data$Pocet)
-}
-zup <- fread("~/Downloads/fnhk_zup.csv")
-prepZup <- function(data) {
-    data$Identifikace_pripadu <- as.factor(data$Identifikace$pripadu)
-    data$Datum_provedeni_vykonu <- as.Date(data$Datum_provedeni_vykonu)
-    data$Kod_polozky <- as.factor(data$Kod_polozky)
-    data$Typ_polozky <- as.factor(data$Typ_polozky)
-    data$Cena <- as.numeric(data$Cena)
-    data$Pocet <- as.numeric(data$Pocet)
-}
-
 shinyServer(function(input, output, session) {
     
     # Create instance of keboola/shiny-lib
-    klib <- KeboolaShiny$new(requireRunId = FALSE)
+    klib <- KeboolaShiny$new()
     
     # keboola will hold 
     keboola <- reactive({
@@ -62,7 +43,7 @@ shinyServer(function(input, output, session) {
         if (keboola()$ready) {
             
             # grab a list of all table objects (meta data about the table, not the actual data)
-            tables <- klib$client$listTables(bucket = klib$bucketId)
+            tables <- klib$client$listTables(bucket = klib$bucket)
             
             # grab the name of each table object
             tableNames <- lapply(tables, function(t) { t$name })
@@ -108,11 +89,15 @@ shinyServer(function(input, output, session) {
             for (i in 1:length(input$rangeCols)) {
                 rangeElem <- input$rangeCols[i]
                 
+                # we need to set the columns as numeric.
+                # careful, if the column is not really numeric, this line will shout at us.
+                sd[[rangeElem]] <- as.numeric(sd[[rangeElem]])
+                
                 # filter our dataset
                 sd <- sd[
                             which(
-                                (sd[,rangeElem] > input[[rangeElem]][1]) &
-                                (sd[,rangeElem] < input[[rangeElem]][2])
+                                sd[,rangeElem] > input[[rangeElem]][1] &
+                                sd[,rangeElem] < input[[rangeElem]][2]
                             ), 
                             # leaving the second argument empty like this means all columns will be selected
                         ]
@@ -220,5 +205,9 @@ shinyServer(function(input, output, session) {
     # Fancy 3D surface plot
     output$volcano <- renderPlotly({
         plot_ly(z = volcano, type = "surface")
+    })
+    
+    output$pplot <- renderPlotly({
+        plot_ly(zup, x=input$xcol, y=input$ycol)
     })
 })
