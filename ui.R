@@ -16,107 +16,115 @@ shinyUI(
     # @param - appTitle - optional title for the app.  Is displayed in the top-right of the page header.
     keboolaPage(
         fluidPage(
-            
             #make an empty column on the left as a margin (just for fun!) 
             column(1,div()), 
             
             # There are 12 columns to a row, so with this column at 10, it will be nicely centered.
             column(10,              
                 
-                # Our demo will be inside a few tabs...
-                tabsetPanel(
-                   
-                    #the first tab will be a brief intro
-                    tabPanel("Introduction",
-                        h1("Welcome to the Keboola sample application!"),
-                        div(
-                            p("This is an example of generated content within the server.R file."),
-                            p("Shiny uses bootstrap, so you can use it's classes/components if you like."),
-                            div("For help with bootstrap, look here:", a("bootstrap", href="http://getbootstrap.com")),
-                            div("This is a success alert, for example", class="alert alert-success"),
-                            
-                            # custom js and css example
-                            div("Feel free to use any custom javascript and css also"),
-                            p("Can we add custom css and javasript?", class="clickable", id="js_example")
-                        )    
-                   ),
-                   
-                   # here we have the data in a simple table on the right, and some filters on the left
-                   tabPanel("For Example",
-                            
-                        # Here we'll have a table selection element and that is the table we'll use throughout
-                        # We'll update the choices for this element on the server side, after the data loads
-                        fluidRow(
-                            column(7, h4("This is a basic example of how outputs are dependent on inputs.")),
-                            column(5, selectInput("table","Choose a table from the bucket to analyse",choices=c()))
-                        ),
-                        
-                        # In this tab we'll set up a sidebar/main style layout  
-                        fluidRow(
-                            column(3, # sidebar
-                                h5("Dynamic Filters"),
-                                helpText("Note, this app isn't doing any type checking, 
-                                         so if you choose a column with a data type that doesn't match the input, things may break."),
-                                wellPanel(
-                                    # all these 
-                                    selectInput("rangeCols","Numeric Ranges",choices=c(), multiple=TRUE),
-                                    
-                                    # this will hold a selection of range selectors depending on the chosen rangeCols.
-                                    uiOutput("rangeElementsUI")
-                                ),
-                                helpText("Go ahead and choose a different table at the top!  Everything should update accordingly")
-                            ),
-                            column(8,
-                                tabsetPanel(
-                                    tabPanel("Histograms",
-                                        plotOutput('histPlot'),
-                                        fluidRow(
-                                            column(6,
-                                                selectInput("histCol", "Column To Plot", choices=c())   
-                                            ),
-                                            column(6,
-                                                sliderInput("bins",
-                                                        "Number of bins:",
-                                                        min = 1,
-                                                        max = 100,
-                                                        value = 30
-                                                )
-                                            )
-                                        ),
-                                        fluidRow(
-                                            column(6,div(
-                                                "Mean:", textOutput("varmean")    
-                                            )),
-                                            column(6,div(
-                                                "Standard Deviation:", textOutput("varsd")    
-                                            ))
-                                        )
-                                    ),
-                                    tabPanel("Plot.ly plot", 
-                                        selectInput("xcol", "X Column", choices=c()),
-                                        selectInput("ycol", "Y Column", choices=c()),
-                                        plotlyOutput("pplot")         
-                                    ),
-                                    tabPanel("Data Table",
-                                             dataTableOutput("sampleTable")         
-                                    )
-                                ) 
-                            )
-                        )    
+                fluidRow(
+                    column(3, # sidebar
+                           # Here we'll have a table selection element and that is the table we'll use throughout
+                           # We'll update the choices for this element on the server side, after the data loads
+                           selectInput("table","Choose a table to analyse",choices=c()),
+                           
+                           h5("Dynamic Filters"),
+                           helpText("Note, this app isn't doing any type checking.  Choosing improper columns for the selectors may result in unexpected behaviour.."),
+                           wellPanel(
+                               # dynamically generated element for numerical ranges
+                               dynamicInput("rangeCols","Numeric Ranges")
+                           ),
+                           wellPanel(
+                               # dynamically generated element for date ranges
+                               dynamicInput("dateCols", "Date Ranges")
+                           ),
+                           wellPanel(
+                               # dynamically generated element for factor (ie. categorical) value selection
+                               dynamicInput("factorCols", "Factors")
+                           )
                     ),
-                   tabPanel("D3 Example",
-                        sankeyNetworkOutput("sankey")),
-                   tabPanel("Plot.ly Examples",
-                        plotlyOutput("trendPlot"),
-                        sliderInput("moviebins", "Number of bins:", min = 1, max = 50, value = 10),
-                        plotlyOutput("boxPlot"),
-                        plotlyOutput("volcano")
+                    column(8,
+                           # Our demo will be inside a few tabs...
+                           tabsetPanel(
+                               
+                               #the first tab will be a brief intro
+                               tabPanel("Introduction",
+                                        h1("Welcome to the Keboola sample application!"),
+                                        div(
+                                            p("This is an example of generated content within the server.R file."),
+                                            p("Shiny uses bootstrap, so you can use it's classes/components if you like."),
+                                            div("For help with bootstrap, look here:", a("bootstrap", href="http://getbootstrap.com")),
+                                            div("This is a success alert, for example", class="alert alert-success"),
+                                            
+                                            # custom js and css example
+                                            div("Feel free to use any custom javascript and css also"),
+                                            p("Can we add custom css and javasript?", class="clickable", id="js_example")
+                                        ),
+                                        helpText("Choosing a different table at the top should update accordingly.")
+                               ),
+                               
+                               # here we have the data in a simple table on the right, and some filters on the left
+                               tabPanel("Histogram",
+                                    # here we'll output a histogram plot with a select for which column, and a slider for the # of bins to use. 
+                                    plotOutput('histPlot'),
+                                    fluidRow(
+                                       column(6,
+                                              selectInput("histCol", "Column To Plot", choices=c())   
+                                       ),
+                                       column(6,
+                                              sliderInput("bins",
+                                                          "Number of bins:",
+                                                          min = 1,
+                                                          max = 100,
+                                                          value = 30
+                                              )
+                                       )
+                                    ),
+                                    fluidRow(
+                                       column(6,div(
+                                           "Mean:", textOutput("varmean")    
+                                       )),
+                                       column(6,div(
+                                           "Standard Deviation:", textOutput("varsd")    
+                                       ))
+                                    )
+                               ),
+                               tabPanel("Box Plot",
+                                    fluidRow(
+                                        column(4, selectInput("boxX", "X Column", choices=c())),
+                                        column(4, selectInput("boxY", "Y Column", choices=c())),
+                                        column(4, selectInput("boxColor", "Colour", choices=c()))
+                                    ),
+                                    fluidRow(
+                                        plotlyOutput("boxPlot")
+                                    )
+                               ),
+                               tabPanel("Scatter Plot",
+                                    fluidRow(
+                                        column(3, selectInput("scatterX", "X Column", choices=c())),
+                                        column(3, selectInput("scatterY", "Y Column", choices=c())),
+                                        column(3, selectInput("scatterColor", "Colour", choices=c())),
+                                        column(3, selectInput("scatterFacet", "Facet", choices=c()))
+                                    ),
+                                    fluidRow(
+                                        column(3, selectInput("scatterXType", "Type of X", choices=c("numeric","date"))),
+                                        column(3, selectInput("scatterYType", "Type of Y", choices=c("numeric","date"))),
+                                        column(3, div()),
+                                        column(3, div())
+                                    ),
+                                    fluidRow(
+                                        plotlyOutput("scatterPlot")    
+                                    )
+                               ),
+                               tabPanel("Data Table",
+                                    dataTableOutput("sampleTable")         
+                               )
+                           ),
+                           # here we add our custom css and javascript to the HTML head
+                           tags$head(tags$script(src="example.js"),
+                                     tags$link(href="example.css", rel="stylesheet"))           
                     )
-                ),
-               
-                # here we add our custom css and javascript to the HTML head
-                tags$head(tags$script(src="example.js"),
-                         tags$link(href="example.css", rel="stylesheet"))
+                )
             )
         ),
         
