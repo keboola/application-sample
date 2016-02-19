@@ -22,6 +22,13 @@ shinyServer(function(input, output, session) {
         # here we create and register a list of our inputs
         # doing this means that when configs are loaded these inputs will be automatically updated
         appInputs <- list(
+            # data filters
+            list(id="table", type="select", hasDependents=TRUE),
+            list(id="rangeCols", type="dynamicRanges"),
+            list(id="dateCols", type="dynamicDateRanges"),
+            list(id="factorCols", type="dynamicFactors"),
+            list(id="apply", type="actionButton"),
+            
             # box plot inputs
             list(id="boxX", type="select"),
             list(id="boxY", type="select"),
@@ -29,18 +36,15 @@ shinyServer(function(input, output, session) {
             # scatter plot inputs
             list(id="scatterX", type="select"),
             list(id="scatterY", type="select"),
-            list(id="scatterXType", type="select"),
-            list(id="scatterYType", type="select"),
+            list(id="scatterXDate", type="select"),
+            list(id="scatterYDate", type="select"),
             list(id="scatterColor", type="select"),
             list(id="scatterFacet", type="select"),
+            list(id="scatterSmooth", type="checkbox"),
             # histogram inputs
             list(id="histCols", type="select"),
-            list(id="bins", type="slider"),
-            # data filters
-            list(id="table", type="select"),
-            list(id="rangeCols", type="dynamicRanges"),
-            list(id="dateCols", type="dynamicDateRanges"),
-            list(id="factorCols", type="dynamicFactors")
+            list(id="bins", type="slider")
+            
         )
         
         # start it up
@@ -129,9 +133,14 @@ shinyServer(function(input, output, session) {
     # any time filter inputs chnage, this will run and return reflected changes
     filteredData <- reactive({
         sd <- sourceData()
-        sd <- klib$applyDynamicFilter(sd,"rangeCols","dynamicRanges")
-        sd <- klib$applyDynamicFilter(sd,"dateCols","dynamicDateRanges")
-        sd <- klib$applyDynamicFilter(sd,"factorCols","dynamicFactors")
+        input$apply
+        input$kb_loadConfig
+        # Ensure that the "isolated" code ONLY runs when the Apply button is clicked or the sourceData is changed
+        isolate({
+            sd <- klib$applyDynamicFilter(sd,"rangeCols","dynamicRanges")
+            sd <- klib$applyDynamicFilter(sd,"dateCols","dynamicDateRanges")
+            sd <- klib$applyDynamicFilter(sd,"factorCols","dynamicFactors")    
+        })
         print(paste("dynamic filters applied, now have", nrow(sd), "rows"))
         sd
     })
@@ -190,9 +199,12 @@ shinyServer(function(input, output, session) {
         yaxis <- list(title=input$boxY)
         
         if (input$boxColor != "None" && input$boxY != "None") {
+            fd[,input$boxY] <- as.numeric(fd[,input$boxY])
+            
             p <- plot_ly(fd, x = fd[,input$boxX], y = fd[,input$boxY], color = fd[,input$boxColor], type = "box")                    
             p <- p %>% layout(xaxis=xaxis, yaxis=yaxis, boxmode="group")
         } else if (input$boxY != "None" && input$boxColor == "None") {
+            fd[,input$boxY] <- as.numeric(fd[,input$boxY])
             p <- plot_ly(fd, x = fd[,input$boxX], y = fd[,input$boxY], type = "box")
             p <- p %>% layout(xaxis=xaxis, yaxis=yaxis, title=paste(input$boxX,"vs",input$boxY))
         } else if (input$boxY == "None" && input$color != "None") {
@@ -207,12 +219,12 @@ shinyServer(function(input, output, session) {
         if (input$scatterX == "" || input$scatterX == "None" || input$scatterY == "" || input$scatterY == "None") {
             return(NULL)
         }
-        if (input$scatterXType != "date") {
+        if (input$scatterXDate) {
             sd[,input$scatterX] <- as.numeric(sd[,input$scatterX])
         } else {
             sd[,input$scatterX] <- as.Date(sd[,input$scatterX])
         }
-        if (input$scatterYType != "date") {
+        if (input$scatterYDate) {
             sd[ ,input$scatterY] <- as.numeric(sd[ ,input$scatterY])
         } else {
             sd[ ,input$scatterY] <- as.Date(sd[ ,input$scatterY])
@@ -236,29 +248,10 @@ shinyServer(function(input, output, session) {
         if (input$scatterYType == "date") {
             p <- p + scale_y_date(labels = scales::date_format("%d. %m. %Y"))    
         }
-        #
-        #p <- p + scale_x_datetime(labels = scales::date_format("%d. %m. %Y"))
-        #p <- p + scale_y_date(labels = scales::date_format("%d. %m. %Y"))            
-        #p <- p + scale_y_datetime(labels = scales::date_format("%d. %m. %Y"))
+        if (input$scatterSmooth) {
+            p <- p + stat_smooth()    
+        }
         
-        #p <- p + geom_smooth()
-        
-        #return(p)
-        ### Scatterplot with loess smoother and it's uncertaincy estimates
-        #m <- loess(mpg ~ disp, data = mtcars)
-        #f <- with(predict(m, se = TRUE), data.frame(fit, se.fit))
-        
-        #l <- list(
-        #    color = toRGB("gray90", alpha = 0.3),
-        #    fillcolor = toRGB("gray90", alpha = 0.3)
-        #)
-        
-        #p %>%
-        #    add_trace(p, data = f, y = fit, mode = "lines") %>%
-        #    add_trace(p, data = f, y = fit + 1.96 * se.fit, mode = "lines",
-        #              fill = "tonexty", line = l) %>%
-        #    add_trace(p, data = f, y = fit - 1.96 * se.fit, mode = "lines",
-        #              fill = "tonexty", line = l)
         ggplotly(p)
         #plot_ly(sd, x=sd[,input$xcol], y=sd[,input$ycol])
     })

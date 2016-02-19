@@ -17,10 +17,10 @@ shinyUI(
     keboolaPage(
         fluidPage(
             #make an empty column on the left as a margin (just for fun!) 
-            column(1,div()), 
+            
             
             # There are 12 columns to a row, so with this column at 10, it will be nicely centered.
-            column(10,              
+            
                 
                 fluidRow(
                     column(3, # sidebar
@@ -30,6 +30,7 @@ shinyUI(
                            
                            h5("Dynamic Filters"),
                            helpText("Note, this app isn't doing any type checking.  Choosing improper columns for the selectors may result in unexpected behaviour.."),
+                           actionButton("apply","Apply Filters"),
                            wellPanel(
                                # dynamically generated element for numerical ranges
                                dynamicInput("rangeCols","Numeric Ranges")
@@ -107,9 +108,9 @@ shinyUI(
                                         column(3, selectInput("scatterFacet", "Facet", choices=c()))
                                     ),
                                     fluidRow(
-                                        column(3, selectInput("scatterXType", "Type of X", choices=c("numeric","date"))),
-                                        column(3, selectInput("scatterYType", "Type of Y", choices=c("numeric","date"))),
-                                        column(3, div()),
+                                        column(3, checkboxInput("scatterXDate", "X is a date")),
+                                        column(3, checkboxInput("scatterYDate", "Y is a date")),
+                                        column(3, checkboxInput("scatterSmooth", "Apply statistical smoother")),
                                         column(3, div())
                                     ),
                                     fluidRow(
@@ -125,7 +126,7 @@ shinyUI(
                                      tags$link(href="example.css", rel="stylesheet"))           
                     )
                 )
-            )
+            
         ),
         
         # our application title
