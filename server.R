@@ -27,7 +27,7 @@ shinyServer(function(input, output, session) {
             list(id="rangeCols", type="dynamicRanges"),
             list(id="dateCols", type="dynamicDateRanges"),
             list(id="factorCols", type="dynamicFactors"),
-            list(id="apply", type="actionButton"),
+            #list(id="apply", type="actionButton"),
             
             # box plot inputs
             list(id="boxX", type="select"),
@@ -97,6 +97,8 @@ shinyServer(function(input, output, session) {
             
             table <- klib$sourceData()()[[input$table]]
             
+            
+            print("UPDATING ELEMENTS IN SOURCEDATA")
             # we'll make a HACK guess that columns with fewer than 100 unique values can be treated as factors
             maybeFactors <- sapply(table,function(x) { length(unique(x)) < 100 })
             
@@ -104,6 +106,9 @@ shinyServer(function(input, output, session) {
             updateSelectInput(session,"rangeCols", choices=names(table))
             updateSelectInput(session,"dateCols", choices=names(table))
             updateSelectInput(session,"factorCols", choices=names(table[maybeFactors]))
+            
+            # generate dynamic uis
+            klib$kfig$generateDynamicUIs(table)
             
             updateSelectInput(session,"histCol", choices=names(table))
             updateSelectInput(session,"boxColor", choices=c("None",names(table[maybeFactors])))
@@ -123,25 +128,31 @@ shinyServer(function(input, output, session) {
     # we need this observable to catch when our data OR dynamic inputs change so we can redraw the elements
     observe({
         sd <- sourceData()
-        input$rangeCols
-        input$dateRangeCols
-        input$factorCols
-        print("GONNA GENERATE UIS")
-        klib$generateDynamicUIs(sd)  
+        currTable <- input$table
+        if (!is.null(klib$kfig)) {
+            config <- klib$kfig$selectedConfig()
+            if (!is.null(config) && currTable == config$table) {
+                klib$kfig$defaultConfigCallback(config)              
+            }    
+        }
+        
     })
     
     # any time filter inputs chnage, this will run and return reflected changes
     filteredData <- reactive({
         sd <- sourceData()
+        if (is.null(sd)) return(NULL)
+        print(names(sd))
+        print("APPLyING dyNAMIC FILETERS")
         input$apply
-        input$kb_loadConfig
-        # Ensure that the "isolated" code ONLY runs when the Apply button is clicked or the sourceData is changed
+        input$rangeCols
+        input$dateCols
+        input$factorCols
         isolate({
-            sd <- klib$applyDynamicFilter(sd,"rangeCols","dynamicRanges")
-            sd <- klib$applyDynamicFilter(sd,"dateCols","dynamicDateRanges")
-            sd <- klib$applyDynamicFilter(sd,"factorCols","dynamicFactors")    
+            sd <- klib$kfig$applyDynamicFilters(sd)        
         })
-        print(paste("dynamic filters applied, now have", nrow(sd), "rows"))
+    
+        print(paste("FILTERED DATA, now have", nrow(sd), "rows"))
         sd
     })
 
@@ -195,6 +206,7 @@ shinyServer(function(input, output, session) {
     # This is a plotly box plot
     output$boxPlot <- renderPlotly({
         fd <- filteredData()
+        
         xaxis <- list(title=input$boxX)
         yaxis <- list(title=input$boxY)
         
