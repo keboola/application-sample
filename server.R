@@ -132,24 +132,38 @@ shinyServer(function(input, output, session) {
         if (!is.null(klib$kfig)) {
             config <- klib$kfig$selectedConfig()
             if (!is.null(config) && currTable == config$table) {
+                print("Calling Config callback from observe")
                 klib$kfig$defaultConfigCallback(config)              
             }    
+            if (klib$kfig$updatedInterface()) {
+                print("re're updated in observe")    
+            }
         }
         
+        print("Observe FINISHED")
+        
+        #klib$kfig$applyDynamicFilters(sd)
     })
     
     # any time filter inputs chnage, this will run and return reflected changes
     filteredData <- reactive({
         sd <- sourceData()
-        if (is.null(sd)) return(NULL)
+        if (is.null(sd)) {
+            print("source data is NULL")
+            return(NULL)
+        }
         print(names(sd))
         print("APPLyING dyNAMIC FILETERS")
         input$apply
-        input$rangeCols
-        input$dateCols
-        input$factorCols
+        input$kb_configLoaded
+        
         isolate({
-            sd <- klib$kfig$applyDynamicFilters(sd)        
+            print(paste("ISOLATED APPLY FiLTERS... input$lc",input$kb_configLoaded,"libcl",klib$kfig$configLoaded))
+            if (klib$kfig$updatedInterface()) {
+                print("INTERFACE UPDATED, applying filter")
+                sd <- klib$kfig$applyDynamicFilters(sd) 
+                updateTextInput(session, "kb_configLoaded", value=klib$kfig$configLoaded)
+            }
         })
     
         print(paste("FILTERED DATA, now have", nrow(sd), "rows"))
@@ -162,7 +176,9 @@ shinyServer(function(input, output, session) {
     # Render a table, this methods shows an example of a reactive element
     output$sampleTable <- renderDataTable({
         # the table will only list our filtered data
-        filteredData()
+        fd <- filteredData()
+        print(paste("dataTable data (fd) has ", nrow(fd), "rows"))
+        fd
     })
     
     # [CHANGE] Plot histogram, this methods shows an example of a reactive element
