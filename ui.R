@@ -33,15 +33,15 @@ shinyUI(
                            actionButton("apply","Apply Filters"),
                            wellPanel(
                                # dynamically generated element for numerical ranges
-                               dynamicInput("rangeCols","Numeric Ranges")
+                               dynamicRangeInput("rangeCols")
                            ),
                            wellPanel(
                                # dynamically generated element for date ranges
-                               dynamicInput("dateCols", "Date Ranges")
+                               dynamicDateRangeInput("dateCols")
                            ),
                            wellPanel(
                                # dynamically generated element for factor (ie. categorical) value selection
-                               dynamicInput("factorCols", "Factors")
+                               dynamicFactorInput("factorCols")
                            )
                     ),
                     column(8,

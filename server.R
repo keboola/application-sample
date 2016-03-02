@@ -94,21 +94,15 @@ shinyServer(function(input, output, session) {
             
             # this library method returns
             # klib$loadTable("sd",input$table)
-            
             table <- klib$sourceData()()[[input$table]]
             
-            
-            print("UPDATING ELEMENTS IN SOURCEDATA")
             # we'll make a HACK guess that columns with fewer than 100 unique values can be treated as factors
             maybeFactors <- sapply(table,function(x) { length(unique(x)) < 100 })
             
             # update the choices to be of columns of the selected table
-            updateSelectInput(session,"rangeCols", choices=names(table))
-            updateSelectInput(session,"dateCols", choices=names(table))
-            updateSelectInput(session,"factorCols", choices=names(table[maybeFactors]))
-            
-            # generate dynamic uis
-            klib$kfig$generateDynamicUIs(table)
+            # updateSelectInput(session,"rangeCols", choices=names(table))
+            # updateSelectInput(session,"dateCols", choices=names(table))
+            # updateSelectInput(session,"factorCols", choices=names(table[maybeFactors]))
             
             updateSelectInput(session,"histCol", choices=names(table))
             updateSelectInput(session,"boxColor", choices=c("None",names(table[maybeFactors])))
@@ -124,51 +118,13 @@ shinyServer(function(input, output, session) {
             NULL
         }
     })
-    
-    # we need this observable to catch when our data OR dynamic inputs change so we can redraw the elements
-    observe({
-        sd <- sourceData()
-        currTable <- input$table
-        if (!is.null(klib$kfig)) {
-            config <- klib$kfig$selectedConfig()
-            if (!is.null(config) && currTable == config$table) {
-                print("Calling Config callback from observe")
-                klib$kfig$defaultConfigCallback(config)              
-            }    
-            if (klib$kfig$updatedInterface()) {
-                print("re're updated in observe")    
-            }
-        }
-        
-        print("Observe FINISHED")
-        
-        #klib$kfig$applyDynamicFilters(sd)
+    config <- reactive({ 
+        input$kb_loadConfig
+        if (is.null(klib$kfig)) { NULL } else { klib$kfig$selectedConfig() } 
     })
-    
-    # any time filter inputs chnage, this will run and return reflected changes
-    filteredData <- reactive({
-        sd <- sourceData()
-        if (is.null(sd)) {
-            print("source data is NULL")
-            return(NULL)
-        }
-        print(names(sd))
-        print("APPLyING dyNAMIC FILETERS")
-        input$apply
-        input$kb_configLoaded
-        
-        isolate({
-            print(paste("ISOLATED APPLY FiLTERS... input$lc",input$kb_configLoaded,"libcl",klib$kfig$configLoaded))
-            if (klib$kfig$updatedInterface()) {
-                print("INTERFACE UPDATED, applying filter")
-                sd <- klib$kfig$applyDynamicFilters(sd) 
-                updateTextInput(session, "kb_configLoaded", value=klib$kfig$configLoaded)
-            }
-        })
-    
-        print(paste("FILTERED DATA, now have", nrow(sd), "rows"))
-        sd
-    })
+    f1 <- callModule(dynamicRange,"rangeCols",sourceData, config)
+    f2 <- callModule(dynamicDateRange, "dateCols", f1, config)
+    filteredData <- callModule(dynamicFactor,"factorCols", f2, config)
 
     ######################################################################
     #  The remainder of this app are output elements (graphs/tables etc...)
@@ -248,14 +204,14 @@ shinyServer(function(input, output, session) {
             return(NULL)
         }
         if (input$scatterXDate) {
-            sd[,input$scatterX] <- as.numeric(sd[,input$scatterX])
-        } else {
             sd[,input$scatterX] <- as.Date(sd[,input$scatterX])
+        } else {
+            sd[,input$scatterX] <- as.numeric(sd[,input$scatterX])
         }
         if (input$scatterYDate) {
-            sd[ ,input$scatterY] <- as.numeric(sd[ ,input$scatterY])
-        } else {
             sd[ ,input$scatterY] <- as.Date(sd[ ,input$scatterY])
+        } else {
+            sd[ ,input$scatterY] <- as.numeric(sd[ ,input$scatterY])
         }
         print(paste("trying plot with ", input$scatterX," vs ", input$scatterY))
         
@@ -270,10 +226,10 @@ shinyServer(function(input, output, session) {
             p <- p + facet_grid(facets)
         }
         
-        if (input$scatterXType == "date") {
+        if (input$scatterXDate) {
             p <- p + scale_x_date(labels = scales::date_format("%d. %m. %Y"))    
         }
-        if (input$scatterYType == "date") {
+        if (input$scatterYDate) {
             p <- p + scale_y_date(labels = scales::date_format("%d. %m. %Y"))    
         }
         if (input$scatterSmooth) {
@@ -281,23 +237,5 @@ shinyServer(function(input, output, session) {
         }
         
         ggplotly(p)
-        #plot_ly(sd, x=sd[,input$xcol], y=sd[,input$ycol])
-    })
-    
-    # This is the plot.ly histogram
-    output$trendPlot <- renderPlotly({
-        data(movies, package="ggplot2")
-        minx <- min(movies$rating)
-        maxx <- max(movies$rating)
-        
-        # size of the bins depend on the input 'bins'
-        size <- (maxx - minx) / input$moviebins
-        
-        # a simple histogram of movie ratings
-        p <- plot_ly(movies, x = rating, autobinx = F, type = "histogram",
-                     xbins = list(start = minx, end = maxx, size = size))
-        # style the xaxis
-        layout(p, xaxis = list(title = "Ratings", range = c(minx, maxx), autorange = F,
-                               autotick = F, tick0 = minx, dtick = size))
     })
 })
