@@ -55,7 +55,11 @@ shinyServer(function(input, output, session) {
                                 tables="all", 
                                 inputList = appInputs, 
                                 dataToSave=filteredData,
-                                forkButtonRef="https://github.com/keboola/application-sample/fork"))
+                                forkButtonRef="https://github.com/keboola/application-sample/fork"
+                                )
+                            )
+        
+        
         
         #return login info list so the rest of the app can use it if desired.
         return(ret$loginInfo)
@@ -118,10 +122,10 @@ shinyServer(function(input, output, session) {
             NULL
         }
     })
-    config <- reactive({ 
-        input$kb_loadConfig
-        if (is.null(klib$kfig)) { NULL } else { klib$kfig$selectedConfig() } 
-    })
+    
+    
+    
+    config <- callModule(appConfig,"kb",klib$kfig)
     f1 <- callModule(dynamicRange,"rangeCols",sourceData, config)
     f2 <- callModule(dynamicDateRange, "dateCols", f1, config)
     filteredData <- callModule(dynamicFactor,"factorCols", f2, config)
