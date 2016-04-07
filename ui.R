@@ -24,10 +24,9 @@ shinyUI(
                        
                        h5("Dynamic Filters"),
                        helpText("Note, this app isn't doing any type checking.  Choosing improper columns for the selectors may result in unexpected behaviour.."),
-                       actionButton("apply","Apply Filters"),
                        wellPanel(
                            # dynamically generated element for numerical ranges
-                           dynamicRangeInput("rangeCols", useApplyBtn=TRUE)
+                           dynamicRangeInput("rangeCols")
                        ),
                        wellPanel(
                            # dynamically generated element for date ranges

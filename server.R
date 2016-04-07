@@ -97,12 +97,17 @@ shinyServer(function(input, output, session) {
         if (input$table != "") {
             
             # this library method returns
-            # klib$loadTable("sd",input$table)
             table <- klib$sourceData()()[[input$table]]
             
-            # we'll make a HACK guess that columns with fewer than 100 unique values can be treated as factors
+            # we'll make a little hack guess that columns with fewer than 100 unique values can be treated as factors
             maybeFactors <- sapply(table,function(x) { length(unique(x)) < 100 })
             
+            # update the choices to be of columns of the selected table
+            updateSelectInput(session,"rangeCols", choices=names(table))
+            updateSelectInput(session,"dateCols", choices=names(table))
+            updateSelectInput(session,"factorCols", choices=names(table[maybeFactors]))
+            
+            # update the rest of the app inputs
             updateSelectInput(session,"histCol", choices=names(table))
             updateSelectInput(session,"boxColor", choices=c("None",names(table[maybeFactors])))
             updateSelectInput(session,"boxX", choices=names(table))
