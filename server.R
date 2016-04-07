@@ -103,11 +103,6 @@ shinyServer(function(input, output, session) {
             # we'll make a HACK guess that columns with fewer than 100 unique values can be treated as factors
             maybeFactors <- sapply(table,function(x) { length(unique(x)) < 100 })
             
-            # update the choices to be of columns of the selected table
-            # updateSelectInput(session,"rangeCols", choices=names(table))
-            # updateSelectInput(session,"dateCols", choices=names(table))
-            # updateSelectInput(session,"factorCols", choices=names(table[maybeFactors]))
-            
             updateSelectInput(session,"histCol", choices=names(table))
             updateSelectInput(session,"boxColor", choices=c("None",names(table[maybeFactors])))
             updateSelectInput(session,"boxX", choices=names(table))
@@ -126,9 +121,9 @@ shinyServer(function(input, output, session) {
     
     
     config <- callModule(appConfig,"kb",klib$kfig)
-    f1 <- callModule(dynamicRange,"rangeCols",sourceData, config)
-    f2 <- callModule(dynamicDateRange, "dateCols", f1, config)
-    filteredData <- callModule(dynamicFactor,"factorCols", f2, config)
+    f1 <- callModule(dynamicRange,"rangeCols",sourceData, config) #, useApplyBtn=TRUE)
+    f2 <- callModule(dynamicDateRange, "dateCols", f1, config) #, useApplyBtn=TRUE) # ?dateFormats?
+    filteredData <- callModule(dynamicFactor,"factorCols", f2, config) #, useApplyBtn=TRUE)
 
     ######################################################################
     #  The remainder of this app are output elements (graphs/tables etc...)

@@ -27,7 +27,7 @@ shinyUI(
                        actionButton("apply","Apply Filters"),
                        wellPanel(
                            # dynamically generated element for numerical ranges
-                           dynamicRangeInput("rangeCols")
+                           dynamicRangeInput("rangeCols", useApplyBtn=TRUE)
                        ),
                        wellPanel(
                            # dynamically generated element for date ranges
