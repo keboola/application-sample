@@ -18,7 +18,7 @@ if (("keboola.sapi.r.client" %in% installedPackages) == FALSE) {
     devtools::install_github("keboola/sapi-r-client")    
 }
 if (("keboola.shiny.lib" %in% installedPackages) == FALSE) {
-    devtools::install_github("keboola/shiny-lib", ref="refactor")    
+    devtools::install_github("keboola/shiny-lib")    
 }
 
 library(keboola.sapi.r.client)
